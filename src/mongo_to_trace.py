@@ -1,5 +1,4 @@
 import sys
-import gzip
 import pymongo
 
 from datatype_map import to_rep_type
@@ -52,108 +51,15 @@ def get_structure(field, name_field, level, target_level):
     if level < target_level:
       res['content'] = []
       for sub_field_k, sub_field_v in field.items():
+        res['content'].append(get_structure(sub_field_k, '{0}<{1}>'.format(name_field, sub_field_k), level + 1, target_level))
         res['content'].append(get_structure(sub_field_v, '{0}<{1}>'.format(name_field, sub_field_k), level + 1, target_level))
     else: 
         res['length'] = len(field.keys())
-    return res    
+    return res
   else:
     return {'name': name_field, 'type': type(field).__name__, 'level': level}
-
   
-def write_decls(collections, path):
-  with open(path+'.decls', 'w') as out:
-    out.write('decl-version 2.0\ninput-language MongoDB\n\n')
-    for col in collections:
-      out.write('ppt ' + 'test.' + col['name'] + ':::POINT\n')
-      out.write('  ppt-type point\n')
-      for field in col['fields']:
-        out.write('  variable ' + field + '\n')
-        out.write('    var-kind variable ' + '\n')
-        out.write('    rep-type string ' + '\n')
-        out.write('    dec-type string ' + '\n')
-        out.write('    flags ' + 'non_null' + '\n')
-        out.write('    comparability 1' + '\n')
-      out.write('\n')
-  
-def write1(db, path, level_orig, level_new):
-  # collections
-  collections = []
-  colls = db.list_collection_names()
-  for c in colls:
-      temp = { 'name':c }
-      cursor = db[c].find()
-      field_set = set()
-      for document in cursor:
-        for key in document.keys():
-          if key not in field_set:
-            field_set.add(key)
-      temp['fields'] = list(field_set)
-      collections.append(temp)
-
-  # decls
-  with open(path + '.decls', 'w') as decls:
-    decls.write('decl-version 2.0\ninput-language MongoDB\n\n')
-    for coll in collections:
-      decls.write('ppt ' + db.name + '.' + coll['name'] + ':::POINT\n')
-      decls.write('  ppt-type point\n')
-      for field in coll['fields']:
-        decls.write('  variable ' + field + '\n')
-        decls.write('    var-kind variable ' + '\n')
-        decls.write('    rep-type string ' + '\n')
-        decls.write('    dec-type string ' + '\n')
-        decls.write('    comparability 1' + '\n')
-      decls.write('\n')
-
-  # dtrace
-  with open(path + '.dtrace', 'w', encoding="utf-8") as dtrace:
-    dtrace.write('decl-version 2.0\n')
-    for coll in collections:
-      coll_ppt = '\n{0}.{1}:::POINT\n'.format(db.name, coll['name'].replace(' ', '_')) # escaped
-      cursor = db[coll['name']].find()
-      
-      for document in cursor:
-        dtrace.write(coll_ppt)
-        for field in coll['fields']:
-          dtrace.write(field + '\n')
-          if field in document.keys():
-            if type(document[field]).__name__ == 'list':
-              dtrace.write('\"' + str(document[field]).replace('\n','') + '\"\n')
-            else:
-              dtrace.write('\"' + str(document[field]).replace('\n','') + '\"\n')
-          else:
-            dtrace.write('\"' + "default" + '\"\n')            
-          dtrace.write("1") # TODO mod
-          dtrace.write("\n")
-          
-def get_collections(db):
-  collections = []
-  cols = db.list_collection_names()
-  for c in cols:
-      temp = { 'name':c }
-      cursor = db[c].find()
-      for document in cursor:
-        temp['fields'] = document.keys()
-      collections.append(temp)
-  return collections
-
-def write_dtrace(db, collections, path):
-  out = gzip.GzipFile(path+'.dtrace.gz', 'wb', 3)
-  with out:
-    out.write(b'decl-version 2.0\n')    
-    for col in collections:
-      col_point = bytes('\n{0}.{1}:::POINT\n'.format('test', col['name'].replace(' ', '_')), 'utf-8') # escaped
-      cursor = db[col['name']].find()
-      for document in cursor:
-        out.write(col_point)
-        for field in document.keys():
-          out.write(bytes(field, 'utf-8'))
-          out.write(b'\n')
-          out.write(bytes(str("\"" + str(document[field])) + "\"", 'utf-8'))
-          out.write(b'\n')
-          out.write(b'1')
-          out.write(b'\n')
-  
-def get_collections3(db, level_orig):
+def get_collections(db, level_orig):
   collections = []
   colls = db.list_collection_names()
   for c in colls:
@@ -167,7 +73,7 @@ def get_collections3(db, level_orig):
     collections.append({'name': c, 'fields': structure})
   return collections
 
-def write_decls3(collections, path):
+def write_decls(collections, path):
   with open(path + '.decls', 'w') as decls:
     def write_var(writer, name, kind, rep, dec, comp):
         writer.write(' variable {0}\n'.format(name))
@@ -188,7 +94,7 @@ def write_decls3(collections, path):
             write_var(decls, subf['name'], 'variable', to_rep_type(subf['type']), subf['type'], '2')
       decls.write('\n')
 
-def write_dtrace3(db, collections, path):
+def write_dtrace(db, collections, path):
   with open(path + '.dtrace', 'w', encoding="utf-8") as dtrace:
     def write_t(writer, k, v, mod):
       writer.write('{0}\n'.format(parse_str(k, escaped=True)))
@@ -226,16 +132,9 @@ if __name__ == '__main__':
   port = int(port)
   client = pymongo.MongoClient(host, port, maxPoolSize=50)  # client = pymongo.MongoClient("localhost", 27017, maxPoolSize=50)
   db = client[database]
-  # v1
-  # collections = get_collections(db)
-  # write_decls(collections, path)
-  # write_dtrace(db, collections, path)
 
-  # v2
-  # write1(db, path, level_orig, level_new)
-
-  # v3
-  collections = get_collections3(db, level_orig)
-  write_decls3(collections, path)
-  write_dtrace3(db, collections, path)
+  collections = get_collections(db, level_orig)
+  print(collections)
+  write_decls(collections, path)
+  write_dtrace(db, collections, path)
   
