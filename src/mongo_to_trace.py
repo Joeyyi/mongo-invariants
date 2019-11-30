@@ -2,7 +2,7 @@ import sys
 import pymongo
 from copy import deepcopy
 
-from datatype_map import to_rep_type, to_dtrace_val
+from datatype_map import to_rep_type, to_dtrace_val, to_default
 
 # string preprocessing for dtrace
 def parse_str(mystr, escaped=False, single_line=False, quoted=False):
@@ -102,15 +102,6 @@ def write_decls(collections, path):
         write_structure(decls, field, 1)
       decls.write('\n')
 
-def get_default(field_type):
-  if field_type == 'str':
-    return '\"NoField\"'
-  if field_type == 'int':
-    return 0 
-  if field_type == 'float':
-    return 0.0
-  else:
-    return '\"NoField\"'
 
 '''
 write_dtrace
@@ -139,14 +130,14 @@ def write_dtrace(db, collections, path):
     def get_default_trace(field):
       res = {}
       if field['type'] == 'list' or field['type'] == 'dict':
-        res = {'var': 'num_' + field['name'], 'val': get_default('int'), 'mod': '1'}
+        res = {'var': 'num_' + field['name'], 'val': to_default('int'), 'mod': '1'}
         if 'content' in field:
           content = []
           for sub in field['content']:
             content.append(get_default_trace(sub))
-          res = {'var': 'num_' + field['name'], 'val': get_default('int'), 'mod': '1', 'content': content}
+          res = {'var': 'num_' + field['name'], 'val': to_default('int'), 'mod': '1', 'content': content}
       else:
-        res = {'var': field['name'], 'val': get_default(field['type']), 'mod': '1'}
+        res = {'var': field['name'], 'val': to_default(field['type']), 'mod': '1'}
       return res
     
     
