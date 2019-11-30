@@ -18,6 +18,14 @@ def to_rep_type(m_type):
   if m_type == 'datetime':
     rep_type = 'java.lang.String'
   if m_type == 'int':
-    rep_type = 'java.lang.String'
+    rep_type = 'int'
   
   return rep_type
+
+
+def to_dtrace_val(val):
+  if type(val) is str:
+    val = '\"' + val + '\"'
+    val = val.replace('\n', '')
+
+  return val
