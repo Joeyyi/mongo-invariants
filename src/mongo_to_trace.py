@@ -59,7 +59,7 @@ def get_structure(field, name_field, level, target_level):
     return res
   else:
     return {'name': name_field, 'type': type(field).__name__, 'level': level}
-  
+
 def get_collections(db, level_orig):
   collections = []
   colls = db.list_collection_names()
@@ -75,6 +75,9 @@ def get_collections(db, level_orig):
   return collections
 
 def write_decls(collections, path):
+  
+  print('generating {0}.decls...'.format(path))
+  
   with open(path + '.decls', 'w') as decls:
     def write_var(writer, name, kind, rep, dec, comp):
         writer.write(' variable {0}\n'.format(name))
@@ -119,6 +122,8 @@ trace structure:
 
 '''
 def write_dtrace(db, collections, path):
+  
+  print('generating {0}.dtrace for {1}...'.format(path, db.name))
   
   with open(path + '.dtrace', 'w', encoding="utf-8") as dtrace:
     def write_trace(item):
@@ -205,4 +210,5 @@ if __name__ == '__main__':
   collections = get_collections(db, level_orig)
   write_decls(collections, path)
   write_dtrace(db, collections, path)
+  print('done.')
   
