@@ -5,7 +5,7 @@ from copy import deepcopy
 from datatype_map import to_rep_type, to_dtrace_val, to_default
 
 # string preprocessing for dtrace
-def parse_str(mystr, escaped=False, single_line=False, quoted=False):
+def parse_str(mystr, escaped=True, single_line=False, quoted=False):
   if type(mystr) is not str:
     mystr = str(mystr)
   if escaped:
@@ -93,9 +93,11 @@ def write_decls(collections, path):
           # variable: each item in arr
           for subf in field['content']:
               write_structure(writer, subf, level + 1)
+      elif field['name'] == '_id':
+        write_var(writer, '_id', 'variable', to_rep_type('ObjectId'), 'ObjectId', field['level'])
       else:
         # basic variable types
-        write_var(writer, field['name'], 'variable', to_rep_type(field['type']), field['type'], field['level'])
+        write_var(writer, field['name'].replace(' ', '_'), 'variable', to_rep_type(field['type']), field['type'], field['level'])
         
     decls.write('decl-version 2.0\ninput-language MongoDB\n\n')
     for coll in collections:
@@ -127,7 +129,7 @@ def write_dtrace(db, collections, path):
   
   with open(path + '.dtrace', 'w', encoding="utf-8") as dtrace:
     def write_trace(item):
-      dtrace.write('{0}\n{1}\n{2}\n'.format(item['var'], item['val'], item['mod']))
+      dtrace.write('{0}\n{1}\n{2}\n'.format(item['var'].replace(' ', '_'), item['val'], item['mod']))
       if 'content' in item:
         for sub in item['content']:
           write_trace(sub)
@@ -201,13 +203,19 @@ def write_dtrace(db, collections, path):
 
 
 if __name__ == '__main__':
-  path, host, port, database, level_orig, level_new = sys.argv[1:]
-  level_orig = int(level_orig)
-  port = int(port)
-  client = pymongo.MongoClient(host, port, maxPoolSize=50)  # client = pymongo.MongoClient("localhost", 27017, maxPoolSize=50)
-  db = client[database]
+  # path, host, port, database, level_orig, level_new = sys.argv[1:]
+  # level_orig = int(level_orig)
+  # port = int(port)
+  # client = pymongo.MongoClient(host, port, maxPoolSize=50)  # client = pymongo.MongoClient("localhost", 27017, maxPoolSize=50)
+  # db = client[database]
 
+
+  path = '/Users/Renol/Desktop/UVA/2019Fall/SA/Project/mongo-invariants/src/test'
+  level_orig = 2
+  myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+  db = myclient["SA"]  # 数据库名
   collections = get_collections(db, level_orig)
+  # print(collections)
   write_decls(collections, path)
   write_dtrace(db, collections, path)
   print('done.')

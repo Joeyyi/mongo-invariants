@@ -57,7 +57,7 @@ if __name__ == '__main__':
     myclient = pymongo.MongoClient("mongodb://localhost:27017/")
     mydb = myclient["SoftwareAnalysis"]  # 数据库名
     # todo：把一个collection拆成多个？
-    mycol = mydb["book"]  # collection名
+    mycol = mydb["countrys_small"]  # collection名
 
     collections = get_collections(mydb)
     print(collections)
