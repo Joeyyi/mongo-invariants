@@ -205,11 +205,11 @@ if __name__ == '__main__':
   # db = client[database]
 
 
-  path = '/Users/Renol/Desktop/UVA/2019Fall/SE/Project/mongo-invariants/src/test'
+  path = '/Users/Renol/Desktop/UVA/2019Fall/SA/Project/mongo-invariants/src/test'
   level_orig = 2
   myclient = pymongo.MongoClient("mongodb://localhost:27017/")
   db = myclient["SoftwareAnalysis"]  # 数据库名
   collections = get_collections(db, level_orig)
-  # print(collections)
-  write_decls(collections, path)
-  write_dtrace(db, collections, path)
+  print(collections)
+  # write_decls(collections, path)
+  # write_dtrace(db, collections, path)

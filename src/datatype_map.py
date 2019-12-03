@@ -13,12 +13,10 @@ java.lang.String; or an array of one of those (indicated by a [..] suffix).
 
 def to_rep_type(m_type):
   rep_type = m_type
-  if m_type == 'int':
-    rep_type = 'int'
+  if m_type == 'int' or m_type == 'double' or m_type == 'float':
+    rep_type = 'double'
   elif m_type == 'bool':
     rep_type = 'boolean'
-  elif m_type == 'double':
-    rep_type = 'double'
   else:
     rep_type = 'java.lang.String'
   return rep_type
@@ -32,7 +30,8 @@ def to_dtrace_val(val):
     val = '\"' + str(val) + '\"'
   if type(val) is bson.objectid.ObjectId:
     val = '\"' + str(val) + '\"'
-
+  if type(val) is bool:
+    val = str(val).lower()
   return val
 
 def to_default(field_type):
@@ -40,7 +39,9 @@ def to_default(field_type):
     return '\"NoField\"'
   if field_type == 'int':
     return 0 
-  if field_type == 'float':
-    return 0.0
+  if field_type == 'float' or field_type == 'int' or field_type == 'double':
+    return 0.00
+  if field_type == 'bool':
+    return
   else:
     return '\"NoField\"'
